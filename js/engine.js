@@ -3,8 +3,10 @@
 (function (global) {
   'use strict';
 
-  function Engine(path) {
-    this.path = path || 'stockfish/stockfish.js';
+  var DEFAULT_BASE = 'https://cdn.jsdelivr.net/gh/nmrugg/stockfish.js@v10.0.2/src/';
+
+  function Engine(base) {
+    this.base = String(base || DEFAULT_BASE).replace(/\/?$/, '/');
     this.worker = null;
     this.ready = false;
     this.current = null;
@@ -19,7 +21,14 @@
     this.initPromise = new Promise(function (resolve, reject) {
       var worker;
       try {
-        worker = new Worker(self.path);
+        var bootstrap =
+          'var Module = { locateFile: function (p) { return ' +
+          JSON.stringify(self.base) + ' + p; } };\n' +
+          'importScripts(' + JSON.stringify(self.base + 'stockfish.js') + ');';
+        var blob = new Blob([bootstrap], { type: 'application/javascript' });
+        var blobUrl = URL.createObjectURL(blob);
+        worker = new Worker(blobUrl);
+        setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 60000);
       } catch (err) {
         reject(new Error('Não foi possível iniciar o Stockfish. Sirva o app via HTTP (ex.: python -m http.server).'));
         return;
@@ -39,7 +48,7 @@
         if (!settled) {
           settled = true;
           clearTimeout(failTimer);
-          reject(new Error('Erro ao carregar o Stockfish. Verifique se os arquivos estão sendo servidos via HTTP.'));
+          reject(new Error('Erro ao carregar o Stockfish. Verifique sua conexão com a internet no primeiro acesso.'));
         }
       };
 

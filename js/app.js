@@ -2,12 +2,23 @@
 (function () {
   'use strict';
 
+  if (typeof Chess === 'undefined') {
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.getElementById('engine-status');
+      if (el) {
+        el.textContent = 'Sem conexão';
+        el.className = 'status error';
+      }
+    });
+    return;
+  }
+
   var $ = function (id) { return document.getElementById(id); };
 
   var PIECES = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' };
   var FILES = 'abcdefgh';
 
-  var engine = new Engine('stockfish/stockfish.js');
+  var engine = new Engine();
 
   var game = new Chess();
   var positions = [];

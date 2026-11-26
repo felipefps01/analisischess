@@ -59,10 +59,12 @@ analisischess/
 ├── css/style.css       # Tema escuro Material You
 ├── js/app.js           # Lógica da interface, tabuleiro e análise
 ├── js/engine.js        # Wrapper UCI do Stockfish em Web Worker
-├── vendor/chess.js     # chess.js v0.10.3 (regras e PGN)
-├── stockfish/          # Stockfish 10 WASM + licença GPL
 └── examples/           # Partidas de exemplo para importar
 ```
+
+No primeiro acesso as bibliotecas são baixadas de um CDN (Stockfish 10 WASM,
+~370 KB, e chess.js); a análise em si roda **100% localmente no seu
+navegador** — nada é enviado para servidores.
 
 ## 🖼️ Importação por imagem (PNG)
 
@@ -74,5 +76,5 @@ app orienta a colar o **FEN** da posição ou importar o **PGN** da partida.
 
 - Código do projeto: MIT
 - [Stockfish](https://github.com/official-stockfish/Stockfish): GPL-3.0
-  (veja `stockfish/license.txt`)
-- [chess.js](https://github.com/jhlywa/chess.js): BSD-2-Clause
+  (motor carregado de https://github.com/nmrugg/stockfish.js, v10.0.2)
+- [chess.js](https://github.com/jhlywa/chess.js): BSD-2-Clause (v0.10.3 via CDN)

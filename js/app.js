@@ -17,6 +17,7 @@
 
   var PIECE_CODE = { p: 'P', n: 'N', b: 'B', r: 'R', q: 'Q', k: 'K' };
   var PIECE_PATH = 'assets/pieces/cburnett/';
+  var ARROW_COLORS = ['#22c55e', '#3b82f6', '#eab308'];
   var FILES = 'abcdefgh';
 
   var engine = new Engine();
@@ -216,10 +217,12 @@
         if (pieceChar) {
           var img = document.createElement('img');
           img.className = 'piece';
-          img.draggable = false;
+          img.draggable = true;
           img.alt = '';
+          img.dataset.square = square;
           img.src = PIECE_PATH + (pieceChar === pieceChar.toUpperCase() ? 'w' : 'b') +
             PIECE_CODE[pieceChar.toLowerCase()] + '.svg';
+          img.addEventListener('dragstart', onPieceDragStart);
           el.appendChild(img);
         }
 
@@ -237,6 +240,21 @@
         }
 
         el.addEventListener('click', onSquareClick);
+        el.addEventListener('dragover', function (e) {
+          if (!selectedSquare || analyzing) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          el.classList.add('dragover');
+        });
+        el.addEventListener('dragleave', function () {
+          el.classList.remove('dragover');
+        });
+        el.addEventListener('drop', function (e) {
+          e.preventDefault();
+          el.classList.remove('dragover');
+          var from = e.dataTransfer.getData('text/plain') || selectedSquare;
+          if (from) performMove(from, square);
+        });
         boardEl.appendChild(el);
       }
     }
@@ -273,20 +291,7 @@
       var moves = c.moves({ square: selectedSquare, verbose: true });
       for (var i = 0; i < moves.length; i++) {
         if (moves[i].to === square) {
-          var move = c.move({ from: selectedSquare, to: square, promotion: 'q' });
-          if (move) {
-            positions.push({
-              fen: c.fen(),
-              san: move.san,
-              from: move.from,
-              to: move.to,
-              color: move.color,
-              number: moveNumberAt(positions[positions.length - 1].fen)
-            });
-            ply = positions.length - 1;
-          }
-          selectedSquare = null;
-          renderAll();
+          performMove(selectedSquare, square);
           return;
         }
       }
@@ -303,9 +308,122 @@
     }
   }
 
+  function onPieceDragStart(event) {
+    if (analyzing) { event.preventDefault(); return; }
+    if (ply !== positions.length - 1) {
+      event.preventDefault();
+      toast('Navegue até o último lance para jogar no tabuleiro.');
+      return;
+    }
+    var square = event.currentTarget.dataset.square;
+    var c = chessAt(positions[ply].fen);
+    var piece = c && c.get(square);
+    if (!piece || piece.color !== c.turn()) { event.preventDefault(); return; }
+    selectedSquare = square;
+    event.dataTransfer.setData('text/plain', square);
+    event.dataTransfer.effectAllowed = 'move';
+    var el = document.querySelector('.square[data-square="' + square + '"]');
+    if (el) el.classList.add('selected');
+    showLegalDots(square);
+  }
+
+  function performMove(from, to) {
+    var pos = positions[ply];
+    if (!pos || analyzing || ply !== positions.length - 1) return;
+    var c = chessAt(pos.fen);
+    if (!c) return;
+
+    var move = null;
+    try {
+      move = c.move({ from: from, to: to, promotion: 'q' });
+    } catch (err) { move = null; }
+
+    if (move) {
+      positions.push({
+        fen: c.fen(),
+        san: move.san,
+        from: move.from,
+        to: move.to,
+        color: move.color,
+        number: moveNumberAt(positions[positions.length - 1].fen)
+      });
+      ply = positions.length - 1;
+      selectedSquare = null;
+      renderAll();
+    } else {
+      selectedSquare = null;
+      renderBoard();
+    }
+  }
+
   function moveNumberAt(fen) {
     var parts = fen.split(' ');
     return parseInt(parts[5], 10) || 1;
+  }
+
+  /* ---------------- Setas dos melhores lances ---------------- */
+
+  function squareCenter(sq) {
+    var f = FILES.indexOf(sq[0]);
+    var r = parseInt(sq[1], 10);
+    return flipped ? [7.5 - f, r - 0.5] : [f + 0.5, 8.5 - r];
+  }
+
+  function drawArrow(svg, from, to, color, opacity) {
+    var NS = 'http://www.w3.org/2000/svg';
+    var a = squareCenter(from);
+    var b = squareCenter(to);
+    var dx = b[0] - a[0];
+    var dy = b[1] - a[1];
+    var len = Math.sqrt(dx * dx + dy * dy);
+    if (!len) return;
+
+    var ux = dx / len;
+    var uy = dy / len;
+    var headLen = 0.34;
+    var headWidth = 0.38;
+    var start = [a[0] + ux * 0.3, a[1] + uy * 0.3];
+    var base = [b[0] - ux * headLen, b[1] - uy * headLen];
+    var px = -uy;
+    var py = ux;
+
+    var line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', start[0]);
+    line.setAttribute('y1', start[1]);
+    line.setAttribute('x2', base[0]);
+    line.setAttribute('y2', base[1]);
+    line.setAttribute('stroke', color);
+    line.setAttribute('stroke-width', '0.17');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('opacity', opacity);
+    svg.appendChild(line);
+
+    var tip = b[0] + ',' + b[1];
+    var p1 = (base[0] + px * headWidth / 2) + ',' + (base[1] + py * headWidth / 2);
+    var p2 = (base[0] - px * headWidth / 2) + ',' + (base[1] - py * headWidth / 2);
+    var head = document.createElementNS(NS, 'polygon');
+    head.setAttribute('points', tip + ' ' + p1 + ' ' + p2);
+    head.setAttribute('fill', color);
+    head.setAttribute('opacity', opacity);
+    svg.appendChild(head);
+  }
+
+  function renderArrows(result) {
+    var svg = $('arrows');
+    if (!svg) return;
+    svg.innerHTML = '';
+    var pos = positions[ply];
+    if (!pos || !result || !result.lines || !result.lines.length) return;
+    if (result.fen && result.fen !== pos.fen) return;
+
+    var max = Math.min(3, settings().multiPV, result.lines.length);
+    for (var i = 0; i < max; i++) {
+      var pv = result.lines[i].pv;
+      if (!pv || !pv.length || pv[0] === '0000') continue;
+      var from = pv[0].slice(0, 2);
+      var to = pv[0].slice(2, 4);
+      drawArrow(svg, from, to, ARROW_COLORS[i], i === 0 ? 0.92 : 0.72);
+    }
   }
 
   /* ---------------- Lista de lances ---------------- */
@@ -421,6 +539,8 @@
     $('depth-meta').textContent = 'Profundidade: ' + (result.depth || 0) + '/' + cfg.depth;
     $('nodes-meta').textContent = 'Nós: ' + formatNodes(result.nodes);
 
+    renderArrows(result);
+
     $('lines-block').hidden = !cfg.showAllLines && !result.lines.length;
     $('mainline-block').hidden = !cfg.showMainline;
 
@@ -437,6 +557,8 @@
     $('mainline').textContent = '—';
     $('depth-meta').textContent = 'Profundidade: —';
     $('nodes-meta').textContent = 'Nós: —';
+    var arrows = $('arrows');
+    if (arrows) arrows.innerHTML = '';
     setStatus('Pronto', 'ready');
   }
 
@@ -499,6 +621,8 @@
     $('eval-score').className = 'eval-score';
     $('lines').innerHTML = '';
     $('mainline').textContent = '…';
+    var arrows = $('arrows');
+    if (arrows) arrows.innerHTML = '';
   }
 
   function classify(loss) {

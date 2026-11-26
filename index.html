@@ -127,7 +127,10 @@
     <section class="column column-center">
       <p id="game-info" class="game-info">Posição inicial — importe um PGN, carregue um FEN ou jogue no tabuleiro.</p>
       <div class="board-area">
-        <div id="board" class="board" aria-label="Tabuleiro de xadrez"></div>
+        <div class="board-stack">
+          <div id="board" class="board" aria-label="Tabuleiro de xadrez"></div>
+          <svg id="arrows" class="arrows" viewBox="0 0 8 8" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
         <div class="board-controls">
           <button id="nav-start" class="btn icon" title="Primeiro lance" aria-label="Primeiro lance">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

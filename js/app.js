@@ -223,6 +223,7 @@
           img.src = PIECE_PATH + (pieceChar === pieceChar.toUpperCase() ? 'w' : 'b') +
             PIECE_CODE[pieceChar.toLowerCase()] + '.svg';
           img.addEventListener('dragstart', onPieceDragStart);
+          img.addEventListener('dragend', onPieceDragEnd);
           el.appendChild(img);
         }
 
@@ -244,16 +245,17 @@
           if (!selectedSquare || analyzing) return;
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
-          el.classList.add('dragover');
+          e.currentTarget.classList.add('dragover');
         });
-        el.addEventListener('dragleave', function () {
-          el.classList.remove('dragover');
+        el.addEventListener('dragleave', function (e) {
+          e.currentTarget.classList.remove('dragover');
         });
         el.addEventListener('drop', function (e) {
           e.preventDefault();
-          el.classList.remove('dragover');
+          var target = e.currentTarget.dataset.square;
+          e.currentTarget.classList.remove('dragover');
           var from = e.dataTransfer.getData('text/plain') || selectedSquare;
-          if (from) performMove(from, square);
+          if (from) performMove(from, target);
         });
         boardEl.appendChild(el);
       }
@@ -325,6 +327,11 @@
     var el = document.querySelector('.square[data-square="' + square + '"]');
     if (el) el.classList.add('selected');
     showLegalDots(square);
+  }
+
+  function onPieceDragEnd() {
+    var dragging = document.querySelectorAll('.square.dragover');
+    for (var i = 0; i < dragging.length; i++) dragging[i].classList.remove('dragover');
   }
 
   function performMove(from, to) {
@@ -935,10 +942,15 @@
     $('show-all-lines').addEventListener('change', renderToggles);
 
     var sizeSlider = $('board-size');
-    var savedSize = parseInt(localStorage.getItem('boardSize'), 10);
+    var savedSize = 0;
+    try { savedSize = parseInt(localStorage.getItem('boardSize'), 10) || 0; } catch (err) { savedSize = 0; }
     if (savedSize >= 40 && savedSize <= 100) {
       sizeSlider.value = savedSize;
       applyBoardSize(savedSize);
+    } else {
+      var area = document.querySelector('.board-area');
+      var fitted = Math.round(area.getBoundingClientRect().width / area.parentElement.clientWidth * 100);
+      sizeSlider.value = Math.max(40, Math.min(100, fitted));
     }
     sizeSlider.addEventListener('input', function () {
       applyBoardSize(parseInt(sizeSlider.value, 10));

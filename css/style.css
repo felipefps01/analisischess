@@ -35,7 +35,8 @@ body {
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
@@ -49,7 +50,7 @@ svg { display: block; }
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 30px 12px;
+  padding: 14px 30px 8px;
   flex-wrap: wrap;
 }
 
@@ -82,25 +83,31 @@ svg { display: block; }
 
 .subtitle { color: var(--text-dim); font-size: 13px; margin-top: 2px; letter-spacing: .2px; }
 
-.tagline {
-  color: var(--text-dim);
-  font-size: 14px;
-  max-width: 340px;
-  text-align: right;
-  line-height: 1.5;
-}
-
 /* ---------- Layout ---------- */
 .layout {
   flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr) 330px;
   gap: 22px;
-  padding: 6px 30px 24px;
-  align-items: start;
+  padding: 6px 30px 16px;
+  align-items: stretch;
 }
 
-.column { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.column::-webkit-scrollbar { width: 8px; }
+.column::-webkit-scrollbar-thumb { background: #2a3245; border-radius: 999px; }
+
+.column-center { overflow: hidden; }
 
 .card {
   background: linear-gradient(180deg, rgba(255, 255, 255, .025), rgba(255, 255, 255, 0) 40%), var(--card);
@@ -291,7 +298,7 @@ svg { display: block; }
 }
 
 .board-area {
-  width: 100%;
+  width: min(100%, calc(100vh - 240px));
   margin: 0 auto;
 }
 
@@ -595,21 +602,6 @@ svg { display: block; }
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
 }
 
-/* ---------- Rodapé ---------- */
-.app-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 26px;
-  padding: 16px 30px;
-  border-top: 1px solid var(--border);
-  color: var(--text-dim);
-  font-size: 13px;
-}
-
-.feat { display: inline-flex; align-items: center; gap: 7px; }
-.feat svg { width: 15px; height: 15px; color: #6d7689; flex-shrink: 0; }
-
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
@@ -630,7 +622,10 @@ svg { display: block; }
 
 /* ---------- Responsivo ---------- */
 @media (max-width: 1100px) {
-  .layout { grid-template-columns: 1fr; }
-  .tagline { text-align: left; max-width: none; }
+  body { height: auto; overflow: auto; }
+  .layout { grid-template-columns: 1fr; align-items: start; }
+  .column { overflow: visible; padding-right: 0; }
+  .column-center { overflow: visible; }
   .board-area { width: 100%; }
+  .game-info { white-space: normal; }
 }

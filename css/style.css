@@ -295,7 +295,7 @@ svg { display: block; }
 }
 
 .board-area {
-  width: min(100%, calc(100vh - 320px));
+  width: min(100%, calc(100vh - 190px));
   margin: 0 auto;
   flex-shrink: 0;
 }
@@ -461,46 +461,6 @@ svg { display: block; }
 }
 
 .ply-label { color: var(--text-dim); font-size: 13px; margin-left: 8px; }
-
-/* ---------- Lista de lances ---------- */
-.moves {
-  flex-shrink: 0;
-  margin-top: 14px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px 14px;
-  height: 118px;
-  overflow-y: auto;
-  font-size: 14px;
-  line-height: 2.1;
-  box-shadow: var(--shadow-card);
-}
-
-.moves::-webkit-scrollbar { width: 8px; }
-.moves::-webkit-scrollbar-thumb { background: #4b4845; border-radius: 999px; }
-
-.moves .move-num { color: var(--text-dim); margin: 0 4px 0 10px; font-size: 13px; }
-.moves .move {
-  display: inline-block;
-  padding: 2px 9px;
-  border-radius: 9px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background .12s ease;
-}
-.moves .move:hover { background: var(--card-2); }
-.moves .move.current { background: var(--accent); color: #fff; box-shadow: 0 3px 10px rgba(129, 182, 76, .4); }
-.moves .move .badge { font-size: 12px; margin-left: 4px; }
-
-.badge.b0 { color: var(--green); }
-.badge.b1 { color: #86efac; }
-.badge.b2 { color: var(--yellow); }
-.badge.b3 { color: var(--orange); }
-.badge.b4 { color: var(--red); }
-.moves .move.current .badge { color: #fff; }
-
-.moves-empty { color: var(--text-dim); font-size: 13px; text-align: center; }
 
 /* ---------- Gráfico ---------- */
 .graph-wrap {

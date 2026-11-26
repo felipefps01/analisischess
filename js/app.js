@@ -550,45 +550,6 @@
 
   /* ---------------- Lista de lances ---------------- */
 
-  function renderMoves() {
-    var container = $('moves');
-    container.innerHTML = '';
-
-    if (positions.length <= 1) {
-      container.innerHTML = '<p class="moves-empty">Nenhum lance ainda. Importe um PGN ou jogue no tabuleiro.</p>';
-      return;
-    }
-
-    for (var p = 1; p < positions.length; p++) {
-      var move = positions[p];
-      var prevColor = positions[p - 1].color;
-      if (move.color === 'w' || prevColor === null || prevColor === 'b') {
-        var num = document.createElement('span');
-        num.className = 'move-num';
-        num.textContent = move.color === 'w' ? move.number + '.' : move.number + '...';
-        container.appendChild(num);
-      }
-      var span = document.createElement('span');
-      span.className = 'move' + (p === ply ? ' current' : '');
-      span.dataset.ply = p;
-      span.textContent = move.san;
-      if (classifications[p]) {
-        var badge = document.createElement('span');
-        badge.className = 'badge ' + classifications[p].cls;
-        badge.textContent = classifications[p].symbol;
-        badge.title = classifications[p].name + ' (perda: ' + (classifications[p].loss / 100).toFixed(2) + ')';
-        span.appendChild(badge);
-      }
-      span.addEventListener('click', function (e) {
-        goToPly(parseInt(e.currentTarget.dataset.ply, 10));
-      });
-      container.appendChild(span);
-    }
-
-    var current = container.querySelector('.move.current');
-    if (current) current.scrollIntoView({ block: 'nearest' });
-  }
-
   /* ---------------- Painel do motor ---------------- */
 
   function renderAnalysis(result, isPartial) {
@@ -880,7 +841,6 @@
         var loss = Math.max(0, Math.min(before, 1500) - Math.min(after, 1500));
         classifications[m] = classify(loss);
       }
-      renderMoves();
       drawGraph();
       setStatus('Análise Concluída', 'done');
       $('ply-label').textContent = 'Análise completa';
@@ -1137,7 +1097,6 @@
 
   function renderAll() {
     renderBoard();
-    renderMoves();
     $('ply-label').textContent = ply === 0
       ? 'Posição inicial'
       : 'Após ' + positions[ply].number + (positions[ply].color === 'w' ? '. ' : '... ') + positions[ply].san;

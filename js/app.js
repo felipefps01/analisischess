@@ -32,6 +32,8 @@
   var analyzing = false;
   var cancelRequested = false;
   var selectedSquare = null;
+  var dragState = null;
+  var suppressClick = false;
   var lastResult = null;
 
   /* ---------------- Utilidades ---------------- */
@@ -160,6 +162,7 @@
   function renderBoard() {
     var boardEl = $('board');
     boardEl.innerHTML = '';
+    hidePromotionPicker();
     var pos = positions[ply];
     if (!pos) return;
 
@@ -217,13 +220,11 @@
         if (pieceChar) {
           var img = document.createElement('img');
           img.className = 'piece';
-          img.draggable = true;
           img.alt = '';
           img.dataset.square = square;
           img.src = PIECE_PATH + (pieceChar === pieceChar.toUpperCase() ? 'w' : 'b') +
             PIECE_CODE[pieceChar.toLowerCase()] + '.svg';
-          img.addEventListener('dragstart', onPieceDragStart);
-          img.addEventListener('dragend', onPieceDragEnd);
+          img.addEventListener('pointerdown', onPiecePointerDown);
           el.appendChild(img);
         }
 
@@ -241,22 +242,6 @@
         }
 
         el.addEventListener('click', onSquareClick);
-        el.addEventListener('dragover', function (e) {
-          if (!selectedSquare || analyzing) return;
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          e.currentTarget.classList.add('dragover');
-        });
-        el.addEventListener('dragleave', function (e) {
-          e.currentTarget.classList.remove('dragover');
-        });
-        el.addEventListener('drop', function (e) {
-          e.preventDefault();
-          var target = e.currentTarget.dataset.square;
-          e.currentTarget.classList.remove('dragover');
-          var from = e.dataTransfer.getData('text/plain') || selectedSquare;
-          if (from) performMove(from, target);
-        });
         boardEl.appendChild(el);
       }
     }
@@ -277,6 +262,7 @@
   }
 
   function onSquareClick(event) {
+    if (suppressClick) { suppressClick = false; return; }
     var square = event.currentTarget.dataset.square;
     var pos = positions[ply];
     if (!pos || analyzing) return;
@@ -310,39 +296,165 @@
     }
   }
 
-  function onPieceDragStart(event) {
-    if (analyzing) { event.preventDefault(); return; }
-    if (ply !== positions.length - 1) {
-      event.preventDefault();
-      toast('Navegue até o último lance para jogar no tabuleiro.');
+  function legalTargets(from) {
+    var pos = positions[ply];
+    if (!pos) return null;
+    var c = chessAt(pos.fen);
+    if (!c) return null;
+    var moves = c.moves({ square: from, verbose: true });
+    var set = {};
+    for (var i = 0; i < moves.length; i++) set[moves[i].to] = true;
+    return set;
+  }
+
+  function squareFromPoint(x, y) {
+    var r = $('board').getBoundingClientRect();
+    if (x < r.left || x >= r.right || y < r.top || y >= r.bottom) return null;
+    var col = Math.min(7, Math.max(0, Math.floor((x - r.left) / (r.width / 8))));
+    var row = Math.min(7, Math.max(0, Math.floor((y - r.top) / (r.height / 8))));
+    if (flipped) return FILES[7 - col] + String(row + 1);
+    return FILES[col] + String(8 - row);
+  }
+
+  function clearHover() {
+    var prev = document.querySelector('.square.hover');
+    if (prev) prev.classList.remove('hover');
+  }
+
+  function onPiecePointerDown(event) {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (analyzing || ply !== positions.length - 1) return;
+    var pos = positions[ply];
+    if (!pos) return;
+    var square = event.currentTarget.dataset.square;
+    var c = chessAt(pos.fen);
+    var piece = c && c.get(square);
+    if (!piece || piece.color !== c.turn()) return;
+
+    event.preventDefault();
+    suppressClick = false;
+    selectedSquare = square;
+    renderBoard();
+    showLegalDots(square);
+
+    var img = document.querySelector('.piece[data-square="' + square + '"]');
+    if (!img) return;
+    dragState = {
+      from: square,
+      img: img,
+      targets: legalTargets(square),
+      startX: event.clientX,
+      startY: event.clientY,
+      moved: false
+    };
+    try { img.setPointerCapture(event.pointerId); } catch (err) { }
+    img.addEventListener('pointermove', onPiecePointerMove);
+    img.addEventListener('pointerup', onPiecePointerUp);
+    img.addEventListener('pointercancel', onPiecePointerUp);
+  }
+
+  function onPiecePointerMove(event) {
+    if (!dragState || dragState.img !== event.currentTarget) return;
+    var dx = event.clientX - dragState.startX;
+    var dy = event.clientY - dragState.startY;
+    if (!dragState.moved) {
+      if (dx * dx + dy * dy < 16) return;
+      dragState.moved = true;
+      dragState.img.classList.add('dragging');
+    }
+    dragState.img.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.14)';
+    var target = squareFromPoint(event.clientX, event.clientY);
+    clearHover();
+    if (target && target !== dragState.from && dragState.targets && dragState.targets[target]) {
+      var el = document.querySelector('.square[data-square="' + target + '"]');
+      if (el) el.classList.add('hover');
+    }
+  }
+
+  function onPiecePointerUp(event) {
+    var img = event.currentTarget;
+    img.removeEventListener('pointermove', onPiecePointerMove);
+    img.removeEventListener('pointerup', onPiecePointerUp);
+    img.removeEventListener('pointercancel', onPiecePointerUp);
+    if (!dragState || dragState.img !== img) { dragState = null; return; }
+    var st = dragState;
+    dragState = null;
+    clearHover();
+
+    if (!st.moved) return;
+
+    suppressClick = true;
+    var target = squareFromPoint(event.clientX, event.clientY);
+    if (target && st.targets && st.targets[target] && target !== st.from) {
+      st.img.style.transform = '';
+      st.img.classList.remove('dragging');
+      performMove(st.from, target);
       return;
     }
-    var square = event.currentTarget.dataset.square;
-    var c = chessAt(positions[ply].fen);
-    var piece = c && c.get(square);
-    if (!piece || piece.color !== c.turn()) { event.preventDefault(); return; }
-    selectedSquare = square;
-    event.dataTransfer.setData('text/plain', square);
-    event.dataTransfer.effectAllowed = 'move';
-    var el = document.querySelector('.square[data-square="' + square + '"]');
-    if (el) el.classList.add('selected');
-    showLegalDots(square);
+
+    st.img.style.transition = 'transform .12s ease';
+    st.img.style.transform = '';
+    st.img.classList.remove('dragging');
+    setTimeout(function () { st.img.style.transition = ''; }, 140);
   }
 
-  function onPieceDragEnd() {
-    var dragging = document.querySelectorAll('.square.dragover');
-    for (var i = 0; i < dragging.length; i++) dragging[i].classList.remove('dragover');
+  function showPromotionPicker(from, to, color) {
+    hidePromotionPicker();
+    var stack = document.querySelector('.board-stack');
+    if (!stack) return;
+    var overlay = document.createElement('div');
+    overlay.className = 'promotion';
+    var box = document.createElement('div');
+    box.className = 'promotion-box';
+    var types = ['q', 'r', 'b', 'n'];
+    for (var i = 0; i < types.length; i++) {
+      (function (type) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('aria-label', 'Promover para ' + type.toUpperCase());
+        var img = document.createElement('img');
+        img.src = PIECE_PATH + color + PIECE_CODE[type] + '.svg';
+        img.alt = '';
+        btn.appendChild(img);
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          hidePromotionPicker();
+          performMove(from, to, type);
+        });
+        box.appendChild(btn);
+      })(types[i]);
+    }
+    overlay.appendChild(box);
+    overlay.addEventListener('pointerdown', function (e) {
+      if (e.target === overlay) { hidePromotionPicker(); renderBoard(); }
+    });
+    stack.appendChild(overlay);
   }
 
-  function performMove(from, to) {
+  function hidePromotionPicker() {
+    var old = document.querySelector('.promotion');
+    if (old) old.remove();
+  }
+
+  function performMove(from, to, promotion) {
     var pos = positions[ply];
     if (!pos || analyzing || ply !== positions.length - 1) return;
     var c = chessAt(pos.fen);
     if (!c) return;
 
+    if (!promotion) {
+      var legal = c.moves({ square: from, verbose: true });
+      for (var pi = 0; pi < legal.length; pi++) {
+        if (legal[pi].to === to && legal[pi].promotion) {
+          showPromotionPicker(from, to, c.turn());
+          return;
+        }
+      }
+    }
+
     var move = null;
     try {
-      move = c.move({ from: from, to: to, promotion: 'q' });
+      move = c.move({ from: from, to: to, promotion: promotion || 'q' });
     } catch (err) { move = null; }
 
     if (move) {

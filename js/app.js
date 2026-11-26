@@ -933,6 +933,24 @@
 
     $('show-mainline').addEventListener('change', renderToggles);
     $('show-all-lines').addEventListener('change', renderToggles);
+
+    var sizeSlider = $('board-size');
+    var savedSize = parseInt(localStorage.getItem('boardSize'), 10);
+    if (savedSize >= 40 && savedSize <= 100) {
+      sizeSlider.value = savedSize;
+      applyBoardSize(savedSize);
+    }
+    sizeSlider.addEventListener('input', function () {
+      applyBoardSize(parseInt(sizeSlider.value, 10));
+    });
+  }
+
+  function applyBoardSize(percent) {
+    var area = document.querySelector('.board-area');
+    if (area) area.style.width = percent + '%';
+    try {
+      localStorage.setItem('boardSize', String(percent));
+    } catch (err) { /* armazenamento indisponível */ }
   }
 
   function renderToggles() {

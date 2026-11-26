@@ -409,6 +409,40 @@ svg { display: block; }
 
 .ply-label { color: var(--text-dim); font-size: 13px; margin-left: 8px; }
 
+.size-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--purple), var(--blue));
+  outline: none;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--purple);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, .5);
+  cursor: grab;
+}
+
+.size-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--purple);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, .5);
+  cursor: grab;
+}
+
 /* ---------- Lista de lances ---------- */
 .moves {
   margin-top: 14px;

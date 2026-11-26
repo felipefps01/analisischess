@@ -284,6 +284,7 @@ svg { display: block; }
 
 /* ---------- Tabuleiro (dominante) ---------- */
 .game-info {
+  flex-shrink: 0;
   font-size: 13px;
   color: var(--text-dim);
   text-align: center;
@@ -294,8 +295,9 @@ svg { display: block; }
 }
 
 .board-area {
-  width: min(100%, calc(100vh - 240px));
+  width: min(100%, calc(100vh - 320px));
   margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .board-stack {
@@ -450,6 +452,7 @@ svg { display: block; }
 }
 
 .board-controls {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -461,12 +464,13 @@ svg { display: block; }
 
 /* ---------- Lista de lances ---------- */
 .moves {
+  flex-shrink: 0;
   margin-top: 14px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px 14px;
-  max-height: 190px;
+  padding: 10px 14px;
+  height: 118px;
   overflow-y: auto;
   font-size: 14px;
   line-height: 2.1;

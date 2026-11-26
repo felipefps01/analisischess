@@ -1,7 +1,11 @@
 # ♞ Analisador de Partidas — Xadrez com Stockfish
 
 Analisador de partidas de xadrez que roda **100% no navegador**, movido pelo
-motor [Stockfish](https://stockfishchess.org) compilado para WebAssembly.
+motor [Stockfish](https://stockfishchess.org) compilado para WebAssembly — com
+peças oficiais do [Lichess](https://lichess.org) (conjunto cburnett).
+
+**Tudo é embutido no repositório** (motor WASM, chess.js e peças SVG): depois
+de carregada, a página não precisa de internet.
 
 Importe sua partida, receba uma análise completa com avaliações, variações,
 linha principal e classificação lance a lance.
@@ -55,16 +59,18 @@ Depois abra <http://localhost:8080>.
 
 ```
 analisischess/
-├── index.html          # Interface principal
-├── css/style.css       # Tema escuro Material You
-├── js/app.js           # Lógica da interface, tabuleiro e análise
-├── js/engine.js        # Wrapper UCI do Stockfish em Web Worker
-└── examples/           # Partidas de exemplo para importar
+├── index.html                # Interface principal
+├── css/style.css             # Tema escuro Material You
+├── js/app.js                 # Lógica da interface, tabuleiro e análise
+├── js/engine.js              # Wrapper UCI do Stockfish em Web Worker
+├── assets/pieces/cburnett/   # Peças SVG oficiais do Lichess
+├── stockfish/                # Stockfish 10 WASM + licença GPL
+├── vendor/chess.js           # chess.js v0.10.3 (regras e PGN)
+└── examples/                 # Partidas de exemplo para importar
 ```
 
-No primeiro acesso as bibliotecas são baixadas de um CDN (Stockfish 10 WASM,
-~370 KB, e chess.js); a análise em si roda **100% localmente no seu
-navegador** — nada é enviado para servidores.
+Nenhum CDN é usado: a análise roda **100% localmente no seu navegador** —
+nada é enviado para servidores.
 
 ## 🖼️ Importação por imagem (PNG)
 
@@ -77,4 +83,5 @@ app orienta a colar o **FEN** da posição ou importar o **PGN** da partida.
 - Código do projeto: MIT
 - [Stockfish](https://github.com/official-stockfish/Stockfish): GPL-3.0
   (motor carregado de https://github.com/nmrugg/stockfish.js, v10.0.2)
-- [chess.js](https://github.com/jhlywa/chess.js): BSD-2-Clause (v0.10.3 via CDN)
+- [chess.js](https://github.com/jhlywa/chess.js): BSD-2-Clause (v0.10.3, embutido)
+- Peças [cburnett](https://lichess.org) do Lichess: GPL-3.0

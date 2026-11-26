@@ -1,12 +1,13 @@
 /* Wrapper do Stockfish (UCI) rodando em Web Worker.
- * Comunica-se via protocolo UCI e devolve resultados estruturados. */
+ * O motor (WASM) fica no próprio repositório (stockfish/); toda a análise
+ * roda localmente no navegador. Devolve resultados estruturados. */
 (function (global) {
   'use strict';
 
-  var DEFAULT_BASE = 'https://cdn.jsdelivr.net/gh/nmrugg/stockfish.js@v10.0.2/src/';
+  var DEFAULT_PATH = 'stockfish/stockfish.js';
 
-  function Engine(base) {
-    this.base = String(base || DEFAULT_BASE).replace(/\/?$/, '/');
+  function Engine(path) {
+    this.path = path || DEFAULT_PATH;
     this.worker = null;
     this.ready = false;
     this.current = null;
@@ -21,16 +22,9 @@
     this.initPromise = new Promise(function (resolve, reject) {
       var worker;
       try {
-        var bootstrap =
-          'var Module = { locateFile: function (p) { return ' +
-          JSON.stringify(self.base) + ' + p; } };\n' +
-          'importScripts(' + JSON.stringify(self.base + 'stockfish.js') + ');';
-        var blob = new Blob([bootstrap], { type: 'application/javascript' });
-        var blobUrl = URL.createObjectURL(blob);
-        worker = new Worker(blobUrl);
-        setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 60000);
+        worker = new Worker(self.path);
       } catch (err) {
-        reject(new Error('Não foi possível iniciar o Stockfish. Sirva o app via HTTP (ex.: python -m http.server).'));
+        reject(new Error('Não foi possível iniciar o Stockfish. Sirva o app via HTTP (ex.: python -m http.server) ou GitHub Pages.'));
         return;
       }
 
@@ -48,7 +42,7 @@
         if (!settled) {
           settled = true;
           clearTimeout(failTimer);
-          reject(new Error('Erro ao carregar o Stockfish. Verifique sua conexão com a internet no primeiro acesso.'));
+          reject(new Error('Erro ao carregar o Stockfish. Verifique se o app está sendo servido via HTTP ou GitHub Pages.'));
         }
       };
 

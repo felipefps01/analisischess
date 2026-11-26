@@ -15,7 +15,8 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
-  var PIECES = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' };
+  var PIECE_CODE = { p: 'P', n: 'N', b: 'B', r: 'R', q: 'Q', k: 'K' };
+  var PIECE_PATH = 'assets/pieces/cburnett/';
   var FILES = 'abcdefgh';
 
   var engine = new Engine();
@@ -213,10 +214,13 @@
 
         var pieceChar = map[square];
         if (pieceChar) {
-          var span = document.createElement('span');
-          span.className = 'piece ' + (pieceChar === pieceChar.toUpperCase() ? 'w' : 'b');
-          span.textContent = PIECES[pieceChar.toLowerCase()];
-          el.appendChild(span);
+          var img = document.createElement('img');
+          img.className = 'piece';
+          img.draggable = false;
+          img.alt = '';
+          img.src = PIECE_PATH + (pieceChar === pieceChar.toUpperCase() ? 'w' : 'b') +
+            PIECE_CODE[pieceChar.toLowerCase()] + '.svg';
+          el.appendChild(img);
         }
 
         if (ri === 7) {

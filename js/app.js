@@ -1052,29 +1052,6 @@
 
     $('show-mainline').addEventListener('change', renderToggles);
     $('show-all-lines').addEventListener('change', renderToggles);
-
-    var sizeSlider = $('board-size');
-    var savedSize = 0;
-    try { savedSize = parseInt(localStorage.getItem('boardSize'), 10) || 0; } catch (err) { savedSize = 0; }
-    if (savedSize >= 40 && savedSize <= 100) {
-      sizeSlider.value = savedSize;
-      applyBoardSize(savedSize);
-    } else {
-      var area = document.querySelector('.board-area');
-      var fitted = Math.round(area.getBoundingClientRect().width / area.parentElement.clientWidth * 100);
-      sizeSlider.value = Math.max(40, Math.min(100, fitted));
-    }
-    sizeSlider.addEventListener('input', function () {
-      applyBoardSize(parseInt(sizeSlider.value, 10));
-    });
-  }
-
-  function applyBoardSize(percent) {
-    var area = document.querySelector('.board-area');
-    if (area) area.style.width = percent + '%';
-    try {
-      localStorage.setItem('boardSize', String(percent));
-    } catch (err) { /* armazenamento indisponível */ }
   }
 
   function renderToggles() {

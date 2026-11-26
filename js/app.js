@@ -34,6 +34,8 @@
   var selectedSquare = null;
   var dragState = null;
   var suppressClick = false;
+  var autoRunning = false;
+  var autoWanted = null;
   var lastResult = null;
 
   /* ---------------- Utilidades ---------------- */
@@ -469,6 +471,7 @@
       ply = positions.length - 1;
       selectedSquare = null;
       renderAll();
+      autoAnalyze();
     } else {
       selectedSquare = null;
       renderBoard();
@@ -732,6 +735,58 @@
     }).then(function () {
       analyzing = false;
       setButtonsAnalyzing(false);
+    });
+  }
+
+  function autoAnalyze() {
+    if (analyzing) return;
+    var fen = positions[ply].fen;
+    if (autoRunning) { autoWanted = fen; engine.stop(); return; }
+    var cfg = settings();
+    var c = chessAt(fen);
+
+    if (c && (c.in_checkmate() || c.in_draw())) {
+      renderAnalysis({
+        fen: fen,
+        best: {
+          score: { type: 'cp', value: c.in_checkmate() ? (c.turn() === 'w' ? -9999 : 9999) : 0 },
+          pv: []
+        },
+        lines: [],
+        depth: cfg.depth,
+        nodes: 0
+      }, false);
+      return;
+    }
+
+    autoRunning = true;
+    setStatus('Analisando…', 'running');
+    engine.init().then(function () {
+      return engine.analyze(fen, {
+        depth: cfg.depth,
+        movetime: cfg.movetime,
+        multiPV: cfg.multiPV,
+        onUpdate: function (snapshot) {
+          if (snapshot && positions[ply] && snapshot.fen === positions[ply].fen) {
+            renderAnalysis(snapshot, true);
+          }
+        }
+      });
+    }).then(function (result) {
+      if (positions[ply] && result && result.fen === positions[ply].fen) {
+        renderAnalysis(result, false);
+      }
+    }).catch(function () {
+      setStatus('Pronto', 'ready');
+    }).then(function () {
+      autoRunning = false;
+      if (autoWanted) {
+        var next = autoWanted;
+        autoWanted = null;
+        if (positions[ply] && positions[ply].fen === next) autoAnalyze();
+      } else if (!analyzing) {
+        setStatus('Pronto', 'ready');
+      }
     });
   }
 

@@ -649,6 +649,10 @@
       li.appendChild(moveSpan);
       li.appendChild(score);
       li.appendChild(pv);
+      li.title = 'Clique para jogar este lance';
+      (function (lineInfo) {
+        li.addEventListener('click', function () { playLineMove(fen, lineInfo.pv); });
+      })(lines[i]);
       linesEl.appendChild(li);
     }
 
@@ -788,6 +792,16 @@
         setStatus('Pronto', 'ready');
       }
     });
+  }
+
+  function playLineMove(fen, pv) {
+    if (analyzing || !pv || !pv.length) return;
+    var pos = positions[ply];
+    if (!pos || ply !== positions.length - 1) return;
+    if (fen !== pos.fen) return;
+    var uci = pv[0];
+    if (!uci || uci === '0000' || uci.length < 4) return;
+    performMove(uci.slice(0, 2), uci.slice(2, 4), uci.length > 4 ? uci[4] : undefined);
   }
 
   function resetPanelSoft() {

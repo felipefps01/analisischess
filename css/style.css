@@ -246,7 +246,7 @@ body {
 .board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  width: min(560px, 100%, calc(100vh - 300px));
+  width: min(60vw, 100%, calc(100vh - 240px));
   aspect-ratio: 1 / 1;
   border-radius: 10px;
   overflow: hidden;
@@ -507,5 +507,5 @@ body {
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; }
   .tagline { text-align: left; max-width: none; }
-  .board { width: min(560px, 100%); }
+  .board { width: min(60vw, 100%); }
 }

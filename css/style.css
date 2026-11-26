@@ -590,12 +590,8 @@ svg { display: block; }
   padding: 7px 10px;
   border-radius: 11px;
   font-size: 14px;
-  cursor: pointer;
-  transition: background .12s ease;
 }
-.lines li:hover { background: rgba(139, 92, 246, .22); }
 .lines li:nth-child(odd) { background: var(--card-2); }
-.lines li:nth-child(odd):hover { background: rgba(139, 92, 246, .28); }
 .lines li .line-idx { color: var(--text-dim); font-size: 12px; width: 14px; }
 .lines li .line-move { font-weight: 700; }
 .lines li .line-score { font-weight: 700; }

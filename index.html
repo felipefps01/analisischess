@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Analisador de partidas de xadrez com Stockfish — importe sua partida e receba uma análise completa.">
+  <title>Analisador de Partidas — Xadrez com Stockfish</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">♞</div>
+      <div class="brand-text">
+        <h1>Analisador <span>de Partidas</span></h1>
+        <p class="subtitle">Xadrez com Stockfish</p>
+      </div>
+    </div>
+    <p class="tagline">Importe sua partida, receba uma análise completa com o poderoso Stockfish!</p>
+  </header>
+
+  <main class="layout">
+    <!-- Coluna esquerda: importação e configurações -->
+    <section class="column column-left">
+      <div class="card">
+        <h2>Importar Partida</h2>
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Importar partida">
+          <span class="dropzone-icon" aria-hidden="true">⬆</span>
+          <p><strong>Arraste uma imagem PNG</strong> ou arquivo PGN aqui<br>ou clique para selecionar</p>
+          <span class="dropzone-hint">PGN · TXT · FEN</span>
+        </div>
+        <input type="file" id="file-input" accept=".pgn,.txt,.fen,text/plain,image/png" hidden>
+        <div class="divider"><span>Ou</span></div>
+        <button id="select-file" class="btn blue">Selecionar Arquivo</button>
+        <div class="fen-row">
+          <input type="text" id="fen-input" placeholder="Cole um FEN (posição)" spellcheck="false">
+          <button id="load-fen" class="btn ghost">Carregar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Configurações da Análise</h2>
+        <label class="field">
+          <span>Profundidade (níveis):</span>
+          <select id="setting-depth">
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="15">15</option>
+            <option value="18">18</option>
+            <option value="20" selected>20</option>
+            <option value="22">22</option>
+            <option value="25">25</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>MultiPV (variações):</span>
+          <select id="setting-multipv">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Tempo por lance (s):</span>
+          <select id="setting-movetime">
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="3">3</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="show-mainline" checked>
+          <span class="track"><span class="thumb"></span></span>
+          Mostrar linha principal
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="show-all-lines" checked>
+          <span class="track"><span class="thumb"></span></span>
+          Mostrar todas as variações
+        </label>
+      </div>
+
+      <button id="start-analysis" class="btn purple big">Iniciar Análise</button>
+      <button id="analyze-game" class="btn outline big">Analisar Partida Completa</button>
+      <button id="stop-analysis" class="btn danger big" hidden>Parar Análise</button>
+    </section>
+
+    <!-- Coluna central: tabuleiro -->
+    <section class="column column-center">
+      <p id="game-info" class="game-info">Posição inicial — importe um PGN, carregue um FEN ou jogue no tabuleiro.</p>
+      <div id="board" class="board" aria-label="Tabuleiro de xadrez"></div>
+      <div class="board-controls">
+        <button id="nav-start" class="btn icon" title="Primeiro lance">⏮</button>
+        <button id="nav-prev" class="btn icon" title="Lance anterior">◀</button>
+        <button id="nav-next" class="btn icon" title="Próximo lance">▶</button>
+        <button id="nav-end" class="btn icon" title="Último lance">⏭</button>
+        <button id="flip-board" class="btn icon" title="Virar tabuleiro">⇅</button>
+        <span id="ply-label" class="ply-label">Lance inicial</span>
+      </div>
+      <div id="moves" class="moves"></div>
+      <div id="graph-wrap" class="graph-wrap" hidden>
+        <h3>Avaliação ao longo da partida</h3>
+        <svg id="graph" preserveAspectRatio="none" viewBox="0 0 600 120"></svg>
+      </div>
+    </section>
+
+    <!-- Coluna direita: resultados da análise -->
+    <section class="column column-right">
+      <div class="card engine-card">
+        <div class="engine-head">
+          <h2>Stockfish</h2>
+          <span id="engine-status" class="status ready">Pronto</span>
+        </div>
+
+        <div class="eval-block">
+          <div id="eval-score" class="eval-score">—</div>
+          <div id="eval-label" class="eval-label">Aguardando análise</div>
+        </div>
+        <div class="eval-bar" aria-hidden="true">
+          <div id="eval-fill" class="eval-fill" style="width:50%"></div>
+        </div>
+
+        <div id="best-move" class="best-move" hidden>
+          <span class="best-move-label">Melhor Lance</span>
+          <span id="best-move-value" class="best-move-value">—</span>
+        </div>
+
+        <div id="lines-block" class="engine-section">
+          <h3>Principais Variações</h3>
+          <ul id="lines" class="lines"></ul>
+        </div>
+
+        <div id="mainline-block" class="engine-section">
+          <h3>Linha Principal</h3>
+          <p id="mainline" class="mainline">—</p>
+          <div class="meta">
+            <span id="depth-meta">Profundidade: —</span>
+            <span id="nodes-meta">Nós: —</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>🐟 Powered by Stockfish</span>
+    <span>🔍 Análise Detalhada com Variações</span>
+    <span>🎨 Interface Moderna Material You</span>
+    <span>📱 Funciona em Qualquer Dispositivo</span>
+    <span>🔒 100% Offline (Sua Privacidade)</span>
+  </footer>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="vendor/chess.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
